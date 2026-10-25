@@ -1,0 +1,79 @@
+---
+title: "EU Medicine Report"
+author: "Daniel Obando"
+format: html
+editor: visual
+---
+
+## Business understanding
+
+#### Which therapeutic areas have the highest number of currently authorized human medicines in the EU?
+
+Knowing where regulatory approvals concentrate shows which disease areas receive the most pharmaceutical development and EMA attention. This helps identify where treatment options are abundant and where they are scarce.
+
+### 1.1 Determine Business Objectives
+
+**Background**: The European Medicines Agency (EMA) publishes a dataset of every medicine assessed centrally in the EU, including its status, therapeutic area (MeSH), regulatory pathway and authorization dates. Understanding where authorized medicines concentrate helps identify which disease areas receive the most pharmaceutical development.
+
+**Business objective:**. Identify which therapeutic areas have the highest number of currently authorized human medicines in the EU.
+
+**Related questions:**
+
+**1-** Which characteristics (generic, bio similar,accelerated assessment, developer, advanced therapy) are most common in the top areas?
+
+**2-** Among currently authorized medicines, how is the distribution of the top areas by year of marketing authorization.
+
+**Business success criteria:**
+
+Success for this project is accomplished if it : delivers (a) a ranked list of the top 10 therapeutic areas with the most authorizations by the EMA, (b) a clear profile of what the top areas have in common, and (c) a visualization understandable by a non-scientific reader.
+
+### 1.2 Assessing the situation
+
+Inventory of resources:
+
+- EMA data-set (Excel, 2,748 records, 39 columns, downloaded 11/10/2026)
+
+- RStudio
+
+- Tidyverse, Quarto, Git
+
+# ASK JOE IF NEEDED
+
+Requirements, assumptions, and constraints: dataset is complete and up to date
+
+### 1.3 Determining Data Mining Goals
+
+**Goal:** count and rank therapeutic areas by number of authorised human medicines, then describe the top areas.
+
+**Problem type:** data description and summarization, with some segmentation by area.
+
+**Technical success criteria:** the counts are reproducible and every filtering and counting decision is documented in the code.
+
+### 1.4 Produce Project Plan
+
+Follow the six CRISP-DM phases to answer the question "Which therapeutic areas have the highest number of currently authorized human medicines in the EU?". 
+
+For achieving this goal, RStudio is going to be used to develop a Quarto Report, using the following tools: readxl, dplyr, tidyr, ggplot2 and Git.
+
+
+```{r}
+1 + 1
+```
+
+## Data understanding
+
+```{r}
+#| echo: false
+2 * 2
+```
+
+The `echo: false` option disables the printing of code (only output is displayed).
+
+##Data preparation
+
+```{r}
+```
+
+## Modelling / analysis
+
+## Evaluation
