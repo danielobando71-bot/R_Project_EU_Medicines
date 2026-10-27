@@ -3,7 +3,11 @@ title: "EU Medicine Report"
 author: "Daniel Obando"
 format: html
 editor: visual
+number-sections: true
+Theme: cosmo
 ---
+
+Data Handling Project: EU Medicines report
 
 ## Business understanding
 
@@ -11,7 +15,7 @@ editor: visual
 
 Knowing where regulatory approvals concentrate shows which disease areas receive the most pharmaceutical development and EMA attention. This helps identify where treatment options are abundant and where they are scarce.
 
-### 1.1 Determine Business Objectives
+### Determine Business Objectives
 
 **Background**: The European Medicines Agency (EMA) publishes a dataset of every medicine assessed centrally in the EU, including its status, therapeutic area (MeSH), regulatory pathway and authorization dates. Understanding where authorized medicines concentrate helps identify which disease areas receive the most pharmaceutical development.
 
@@ -27,7 +31,7 @@ Knowing where regulatory approvals concentrate shows which disease areas receive
 
 Success for this project is accomplished if it : delivers (a) a ranked list of the top 10 therapeutic areas with the most authorizations by the EMA, (b) a clear profile of what the top areas have in common, and (c) a visualization understandable by a non-scientific reader.
 
-### 1.2 Assessing the situation
+### Assessing the situation
 
 Inventory of resources:
 
@@ -37,11 +41,11 @@ Inventory of resources:
 
 - Tidyverse, Quarto, Git
 
-# ASK JOE IF NEEDED
+  Assumptions about the data:
 
-Requirements, assumptions, and constraints: dataset is complete and up to date
+- 
 
-### 1.3 Determining Data Mining Goals
+### Determining Data Mining Goals
 
 **Goal:** count and rank therapeutic areas by number of authorised human medicines, then describe the top areas.
 
@@ -49,27 +53,154 @@ Requirements, assumptions, and constraints: dataset is complete and up to date
 
 **Technical success criteria:** the counts are reproducible and every filtering and counting decision is documented in the code.
 
-### 1.4 Produce Project Plan
+### Produce Project Plan
 
-Follow the six CRISP-DM phases to answer the question "Which therapeutic areas have the highest number of currently authorized human medicines in the EU?". 
+Follow the six CRISP-DM phases to answer the question "Which therapeutic areas have the highest number of currently authorized human medicines in the EU?".
 
 For achieving this goal, RStudio is going to be used to develop a Quarto Report, using the following tools: readxl, dplyr, tidyr, ggplot2 and Git.
 
-
-```{r}
-1 + 1
+```         
 ```
 
 ## Data understanding
 
+### Collecting the initial data
+
+The first step for the data understanding will be importing our data set and libraries needed. The date came from the [EMA website](https://www.ema.europa.eu/en/medicines/download-medicine-data):
+
 ```{r}
 #| echo: false
-2 * 2
+#| message: false
+library(readxl)
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+        
+eu_medicine <- read_excel("eu_medicine.xlsx", skip = 8, guess_max = 5000)
+
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+### Describe the data
 
-##Data preparation
+The data set contains 2,748 records and 39 variables. Each record is a medicine assessed by the EMA.
+
+```{r}
+#| label: Number of medicines by category and status
+#| echo: false
+#| message: false
+eu_medicine |>
+  count(Category, `Medicine status`) |>
+  arrange(Category, desc(n)) |>
+  knitr::kable()
+```
+
+The dataset includes both human and veterinary medicines. Since the business question refers to human medicines only, veterinary records were excluded from the analysis, leaving \[X\] human medicines, of which \[1,568\] have an “Authorised” status.
+
+```{r}
+#| label: Target Population
+target <- eu_medicine |>
+  filter(Category == "Human", `Medicine status` == "Authorised")
+nrow(target)
+```
+
+The data set contains variable needed to answer the business question:
+
+| Variable | Description | Type |
+|------------------------|------------------------|------------------------|
+| `Category` | Human or veterinary | Text |
+| `Medicine status` | Authorised, withdrawn, etc. | Text |
+| `Therapeutic area (MeSH)` | Disease area(s), separated by `;` | Text |
+| `Generic, Biosimilar` | Medicine characteristic | Text |
+| , `Conditional approval`, `Accelerated assessment`, `Advanced therapy` | Regulatory characteristics | Text |
+
+**Problems encountered with the data:**
+
+- The excel file has 8 introductory rows before the table. To solve this, we use skip = 8.
+
+- With default settings, \`read_excel()\` produce type-guessing warnings in two mostly empty date columns. This was solved using guess_max = 5000.
+
+- Missing values: columns such as 'marketing authorisation date ' can't be included in the analysis as all of the values or most of them are missing.
+
+### Explore the data
+
+**Therapeutic area**
+
+Due the format of the data, a medicine can have several areas separated by ";", they are split into one row per area before counting. A medicine is therefore, counted once in each of its areas.
+
+```{r}
+area_counts <- target |>
+  separate_rows(`Therapeutic area (MeSH)`, sep = ";") |>
+  mutate(area = str_trim(`Therapeutic area (MeSH)`)) |> # str_trim removes white spaces
+  filter(!is.na(area)) |>
+  count(area, sort = TRUE)
+  
+```
+
+```{r}
+#| label: explore-areas
+#| echo: false
+area_counts |>
+  slice_head(n = 10) |>
+  ggplot(aes (x = n, y = reorder(area, n))) +
+  geom_col() +
+  labs(title = "Top 10 Therapeutic Areas (preliminary)",
+       x = "Number of authorised human medicines", y = NULL)
+
+```
+
+*Initial finding:* \[describe the top areas and what stands out\].
+
+**Authorisation year.**
+
+```{r}
+#| echo: false
+target |>
+  mutate(year = year(dmy(`Marketing authorisation date`))) |>
+  count(year) |>
+  ggplot(aes(x = year, y = n)) +
+  geom_col() +
+  labs(x = "Year of marketing authorisation", y = "Medicines")
+```
+
+*Initial finding:* \[describe the trend\]
+
+### Verify data quality
+
+**Quality checks**
+
+```{r}
+#| echo: false
+#| include: false
+
+sum(duplicated(eu_medicine))                          # duplicated records
+sum(is.na(target$`Therapeutic area (MeSH)`))          # missing area
+sum(is.na(target$`Marketing authorisation date`))     # missing date
+n_distinct(area_counts$area)                          # distinct areas
+
+```
+
+```{r}
+#| echo: false
+#| include: false
+# Finding medicines with more than one area
+target |>
+  filter(!is.na(`Therapeutic area (MeSH)`)) |> #filter(!is.na(...)) excludes results without therapeutic area
+  summarise(
+    total_with_area = n(),
+    more_than_one = sum(str_detect(`Therapeutic area (MeSH)`, ";")), #str_detect(..., ";") identifies rows with ";"
+  ) 
+```
+
+|  |  |  |  |
+|------------------|------------------|------------------|------------------|
+| **Quality issue** | **Evidence founded** | **Consequence for the analysis** | **Action (Phase 3)** |
+| Multiple areas per medicine | 571 medicines have more than one area | Counting by area adds up to more than 1,568, so totals are not additive | Split with `separate_rows()` and state the counting rule |
+| Inconsistent granularity for therapeutic areas terms | Related terms are separated in 2 or general terms group in 1 term (566 distinct areas). | The ranking is fragmented and may understate broad areas | Document the limitation or group related terms |
+| Missing therapeutic area | 13 records missing | These medicines are excluded from the ranking | Exclude only from that analysis |
+| Missing authorisation date | 6 records missing | They cannot be placed in the time analysis | Exclude only from the trend question |
+| Dates stored as text (day/month/year) | Observed in source file | Sorting and grouping by year would be wrong | Convert with `dmy()` |
+
+## Data preparation
 
 ```{r}
 ```
@@ -77,3 +208,5 @@ The `echo: false` option disables the printing of code (only output is displayed
 ## Modelling / analysis
 
 ## Evaluation
+
+## Data preparation
