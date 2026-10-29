@@ -4,7 +4,9 @@ author: "Daniel Obando"
 format: html
 editor: visual
 number-sections: true
-Theme: cosmo
+theme: cosmo
+echo: false
+message: false
 ---
 
 Data Handling Project: EU Medicines report
@@ -202,8 +204,194 @@ target |>
 
 ## Data preparation
 
+### Select the data
+
+Data selection was guided by three criteria defined in CRISP-DM: relevance to the data mining goals, data quality, and technical constraints. Selection was applied to both records (rows) and attributes (columns).
+
 ```{r}
+#| echo: false
+#| include: false
+# Checking column names to decide which to include in the final report
+names(eu_medicine)
 ```
+
+#### Rationale for inclusion/exclusion
+
+Veterinary medicines and medicines with a status other than “Authorised” were excluded, as the business question concerns currently authorised human medicines.
+
+Initially, the inclusion of *refused medicines* was considered, in order to compare them with authorised ones. However, the number of refused medicines is very low compared with the number of authorised medicines (65 vs. 1,568). It is considered that this imbalance makes it difficult to carry out a meaningful analysis, so refused medicines were excluded.
+
+Of the 39 original variables, only those needed for the three questions were kept: therapeutic area, authorisation date, medicine (Generic, Biosimilar, Marketing authorisation developer, )and regulatory related characteristics (Advanced therapy, PRIME: priority medicine).
+
+```{r}
+#| echo: false
+medicines <- eu_medicine |>
+  filter(Category == "Human" , `Medicine status` == "Authorised") |>
+  select(`Therapeutic area (MeSH)`,
+    Generic,
+    Biosimilar,
+    `PRIME: priority medicine`,
+    `Advanced therapy`,
+    `Marketing authorisation date`,
+    `Marketing authorisation developer / applicant / holder`)
+```
+
+```{r}
+#| echo: false
+#| message: false
+head(medicines , n = 3)
+```
+
+### Clean the data
+
+#### Removing missing values
+
+Records with missing values in any of the selected variables were removed using *na.omit()*. This reduced the working dataset from 1,568 to **1,532** records (36 records, 2.3%). Of these, **13** lacked a therapeutic area, **6** lacked a marketing authorisation date, and **17** had missing values in Marketing authorisation developer / applicant / holder. Since the removed records represent a small share of the dataset, their impact on the results is considered minimal.
+
+```{r}
+#| label: remove-na
+#| echo: false
+medicines_complete <- medicines |>
+  na.omit()
+
+nrow(medicines)           # before
+nrow(medicines_complete)  # after
+```
+
+#### Normalize text per area
+
+As shown in Phase 2, some records contained multiple therapeutic areas separated by semicolons (;). These values were split into individual therapeutic areas to allow each area to be counted separately.
+
+```{r}
+area_counts <- target |>
+  separate_rows(`Therapeutic area (MeSH)`, sep = ";") |>
+  mutate(area = str_trim(`Therapeutic area (MeSH)`)) |> # str_trim removes white spaces
+  filter(!is.na(area)) |>
+  count(area, sort = TRUE)
+
+```
+
+As dates in `Marketing authorisation date` are formatted as text, part of the cleaning consist in transforming those dates into a “date” type object. For this, we call the package library(lubridate), using the function as_date().
+
+```{r}
+library(lubridate)
+medicines_complete |> 
+  mutate(`Marketing authorisation date` = as_date(`Marketing authorisation date`, format = "%d/%m/%Y"))
+
+```
+
+### Construct data
+
+**Derived attributes**
+
+Two variables were derived from existing columns at the medicine level (one row per medicine):
+
+| New variable | Derived from | Description | Purpose |
+|------------------|------------------|------------------|------------------|
+| `authorisation_year` | `Marketing authorisation date` | Year of authorisation, extracted after converting the date from text (day/month/year) | Supporting question 2 (trend over the years) |
+| `n_areas` | `Therapeutic area (MeSH)` | Number of therapeutic areas of each medicine, computed by counting the `;` separators plus one | Quantifies the multiple-area issue found in section 2.4 |
+
+```{r}
+#| label: construct-data
+#| echo: false
+#| message: false
+medicines_complete <- medicines_complete |>
+  mutate(
+    authorisation_year = year(dmy(`Marketing authorisation date`)),
+    n_areas = str_count(`Therapeutic area (MeSH)`, ";") + 1
+  )
+
+medicines_complete |>
+  select(`Marketing authorisation date`, authorisation_year,
+         `Therapeutic area (MeSH)`, n_areas) 
+```
+
+**Generated records**
+
+One single medicine can belong to several therapeutic areas separated by `;`, so counting areas requires one record per medicine-area. Using `separate_rows()`, a new table, `medicines_areas`, was generated with \[N\] records (vs. 1,532 medicines). Each record keeps all the variables of its medicine, including `authorisation_year`, so the same table supports both the ranking of areas and their evolution over the years.
+
+```{r}
+#| label: integrate-areas
+medicines_areas <- medicines_complete |>
+  separate_rows(`Therapeutic area (MeSH)`, sep = ";") |>
+  rename(area = `Therapeutic area (MeSH)`) |>
+  mutate(area = str_trim(area)) |>
+  filter(!is.na(area), area != "")
+```
+
+The two tables serve different purposes:
+
+| Table | One row per | Used for |
+|------------------------|------------------------|------------------------|
+| `medicines_complete` | Medicine | Counting medicines, common characteristics, authorisation year |
+| `medicines_areas` | Medicine-area pair | Ranking of therapeutic areas and their trend over time |
+
+### Integrate data
+
+For this step, No tables needed to be merged, since all variables come from a single source (the EMA dataset). Integration for this project was limited to aggregation, summary tables were computed from \`medicines_areas\` so that each business question has a dedicated business ready table.
+
+| Table | Content | Used for |
+|------------------|---------------------------|---------------------------|
+| \`area_counts\` | Number of authorised human medicines per therapeutic area | Main question: ranking of areas |
+| \`area_year\` | Medicines per authorisation year for the 10 leading areas | Supporting question 2: trend over the years |
+
+: Ready to use tables
+
+```{r}
+#| label: integrate-data
+area_counts <- medicines_areas |>
+  count(area, sort = TRUE)
+
+top_areas <- area_counts |>
+  slice_head(n = 10) |>
+  pull(area)
+
+area_year <- medicines_areas |>
+  filter(area %in% top_areas) |>
+  count(authorisation_year, area)
+```
+
+The totals of \`area_counts\` match the number of medicine-area records (r nrow(medicines_areas)), confirming that no records were lost during aggregation. Because a medicine counts once in each of its areas, the sum of the counts exceeds the number of medicines.
+
+### Format data
+
+For the format of the data, only syntactic changes were made, none of which alter the meaning of the data.
+
+#### Rename columns
+
+Renamed to short, lowercase names without spaces (e.g., `holder`, `prime`) | Avoids backticks and typing errors in the code
+
+```{r}
+#| label: format-names
+new_names <- c(
+  therapeutic_area = "Therapeutic area (MeSH)",
+  authorisation_date = "Marketing authorisation date",
+  generic = "Generic",
+  biosimilar = "Biosimilar",
+  prime = "PRIME: priority medicine",
+  advanced_therapy = "Advanced therapy",
+  holder = "Marketing authorisation developer / applicant / holder"
+)
+
+medicines_complete <- medicines_complete |> rename(any_of(new_names))
+medicines_areas    <- medicines_areas    |> rename(any_of(new_names))
+```
+ 
+#### Order the columns
+
+Related variables where grouped together in order to enhance readability.
+
+```{r}
+#| label: format-order
+medicines_complete <- medicines_complete |>
+  relocate(authorisation_date, authorisation_year, therapeutic_area, n_areas,
+           .after = holder)
+           
+medicines_areas <- medicines_areas |>
+  relocate(authorisation_date, authorisation_year, area, n_areas,
+           .after = holder)
+```
+           
 
 ## Modelling / analysis
 
