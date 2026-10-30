@@ -13,15 +13,13 @@ Data Handling Project: EU Medicines report
 
 ## Business understanding
 
-#### Which therapeutic areas have the highest number of currently authorized human medicines in the EU?
-
 Knowing where regulatory approvals concentrate shows which disease areas receive the most pharmaceutical development and EMA attention. This helps identify where treatment options are abundant and where they are scarce.
 
 ### Determine Business Objectives
 
-**Background**: The European Medicines Agency (EMA) publishes a dataset of every medicine assessed centrally in the EU, including its status, therapeutic area (MeSH), regulatory pathway and authorization dates. Understanding where authorized medicines concentrate helps identify which disease areas receive the most pharmaceutical development.
+**Background**: the European Medicines Agency (EMA) publishes a dataset of every medicine assessed centrally in the EU, including its status, therapeutic area (MeSH), regulatory pathway and authorization dates. Understanding where authorized medicines concentrate helps identify which disease areas receive the most pharmaceutical development.
 
-**Business objective:**. Identify which therapeutic areas have the highest number of currently authorized human medicines in the EU.
+**Business objective** **(research question/hypothesis):** identify which therapeutic areas have the highest number of currently authorized human medicines in the EU.
 
 **Related questions:**
 
@@ -35,7 +33,7 @@ Success for this project is accomplished if it : delivers (a) a ranked list of t
 
 ### Assessing the situation
 
-Inventory of resources:
+**Inventory of resources:**
 
 - EMA data-set (Excel, 2,748 records, 39 columns, downloaded 11/10/2026)
 
@@ -43,9 +41,15 @@ Inventory of resources:
 
 - Tidyverse, Quarto, Git
 
-  Assumptions about the data:
+**Assumptions about the data:**
 
-- 
+- Currency: data provided by the EMA contains accurate and up to date information about all listed medicines.
+
+- Data integrity: provided attributes for each medicine are officially validated.
+
+- A medicine is considered as currently available in the European market only if the column "Medicine Status" is equal to "Authorised".
+
+- Every authorised medicine have the same weight in the analysis, regardless of sales volume or clinical impact.
 
 ### Determining Data Mining Goals
 
@@ -68,7 +72,7 @@ For achieving this goal, RStudio is going to be used to develop a Quarto Report,
 
 ### Collecting the initial data
 
-The first step for the data understanding will be importing our data set and libraries needed. The date came from the [EMA website](https://www.ema.europa.eu/en/medicines/download-medicine-data):
+The first step for the data understanding will be importing our data set and libraries needed. The date came from the [EMA website](https://www.ema.europa.eu/en/medicines/download-medicine-data).
 
 ```{r}
 #| echo: false
@@ -96,7 +100,7 @@ eu_medicine |>
   knitr::kable()
 ```
 
-The dataset includes both human and veterinary medicines. Since the business question refers to human medicines only, veterinary records were excluded from the analysis, leaving \[X\] human medicines, of which \[1,568\] have an “Authorised” status.
+The dataset includes both human and veterinary medicines. Since the business question refers to human medicines only, veterinary records were excluded from the analysis, leaving 2351 human medicines, of which 1568 have an “Authorised” status.
 
 ```{r}
 #| label: Target Population
@@ -133,7 +137,7 @@ Due the format of the data, a medicine can have several areas separated by ";", 
 area_counts <- target |>
   separate_rows(`Therapeutic area (MeSH)`, sep = ";") |>
   mutate(area = str_trim(`Therapeutic area (MeSH)`)) |> # str_trim removes white spaces
-  filter(!is.na(area)) |>
+  filter(!is.na(area)) |> # keep only valid results, no blank/NA values
   count(area, sort = TRUE)
   
 ```
@@ -141,7 +145,6 @@ area_counts <- target |>
 ```{r}
 #| label: explore-areas
 #| echo: false
-#| output: false
 area_counts |>
   slice_head(n = 10) |>
   ggplot(aes (x = n, y = reorder(area, n))) +
@@ -150,8 +153,6 @@ area_counts |>
        x = "Number of authorised human medicines", y = NULL)
 
 ```
-
-*Initial finding:* \[describe the top areas and what stands out\].
 
 **Authorisation year.**
 
@@ -164,8 +165,6 @@ target |>
   geom_col() +
   labs(x = "Year of marketing authorisation", y = "Medicines")
 ```
-
-*Initial finding:* \[describe the trend\]
 
 ### Verify data quality
 
@@ -189,10 +188,10 @@ n_distinct(area_counts$area)                          # distinct areas
 #| output: false
 # Finding medicines with more than one area
 target |>
-  filter(!is.na(`Therapeutic area (MeSH)`)) |> #filter(!is.na(...)) excludes results without therapeutic area
+  filter(!is.na(`Therapeutic area (MeSH)`)) |> #excludes results without therapeutic area
   summarise(
     total_with_area = n(),
-    more_than_one = sum(str_detect(`Therapeutic area (MeSH)`, ";")), #str_detect(..., ";") identifies rows with ";"
+    more_than_one = sum(str_detect(`Therapeutic area (MeSH)`, ";")), #str_detect identifies rows with ";"
   ) 
 ```
 
@@ -221,11 +220,11 @@ names(eu_medicine)
 
 #### Rationale for inclusion/exclusion
 
-Veterinary medicines and medicines with a status other than “Authorised” were excluded, as the business question concerns currently authorised human medicines.
+Veterinary medicines and human medicines with a status other than “Authorised” were excluded, as the business question concerns currently authorised human medicines.
 
 Initially, the inclusion of *refused medicines* was considered, in order to compare them with authorised ones. However, the number of refused medicines is very low compared with the number of authorised medicines (65 vs. 1,568). It is considered that this imbalance makes it difficult to carry out a meaningful analysis, so refused medicines were excluded.
 
-Of the 39 original variables, only those needed for the three questions were kept: therapeutic area, authorisation date, medicine (Generic, Biosimilar, Marketing authorisation developer, )and regulatory related characteristics (Advanced therapy, PRIME: priority medicine).
+Of the 39 original variables, only those needed for the three questions were kept: therapeutic area, authorisation date, medicine (Generic, Biosimilar )and regulatory related characteristics (Advanced therapy, PRIME: priority medicine).
 
 ```{r}
 #| echo: false
@@ -258,11 +257,11 @@ Records with missing values in any of the selected variables were removed using 
 #| echo: false
 #| message: false
 #| output: false
-medicines_complete <- medicines |>
+medicines_without_na <- medicines |>
   na.omit()
 
 nrow(medicines)           # before
-nrow(medicines_complete)  # after
+nrow(medicines_without_na)  # after
 ```
 
 #### Normalize text per area
@@ -286,7 +285,7 @@ As dates in `Marketing authorisation date` are formatted as text, part of the cl
 ```{r}
 #| output: false
 library(lubridate)
-medicines_complete |> 
+medicines_without_na |> 
   mutate(`Marketing authorisation date` = as_date(`Marketing authorisation date`, format = "%d/%m/%Y"))
 
 ```
@@ -307,10 +306,10 @@ Two variables were derived from existing columns at the medicine level (one row 
 #| echo: false
 #| message: false
 #| output: false
-medicines_complete <- medicines_complete |>
+medicines_without_na <- medicines_without_na |>
   mutate(
     authorisation_year = year(dmy(`Marketing authorisation date`)),
-    n_areas = str_count(`Therapeutic area (MeSH)`, ";") + 1
+    n_areas = str_count(`Therapeutic area (MeSH)`, ";") + 1 
   )
 
 ```
@@ -319,23 +318,24 @@ medicines_complete <- medicines_complete |>
 #| echo: false
 #| message: false
 #| output: false
-medicines_complete |>
+medicines_without_na |>
   select(`Marketing authorisation date`, authorisation_year,
          `Therapeutic area (MeSH)`, n_areas) 
 ```
 
 **Generated records**
 
-One single medicine can belong to several therapeutic areas separated by `;`, so counting areas requires one record per medicine-area. Using `separate_rows()`, a new table, `medicines_areas`, was generated with \[N\] records (vs. 1,532 medicines). Each record keeps all the variables of its medicine, including `authorisation_year`, so the same table supports both the ranking of areas and their evolution over the years.
+One single medicine can belong to several therapeutic areas separated by `;`, so counting areas requires one record per medicine area. Using `separate_rows()`, a new table, `medicines_areas`, was generated. Each record keeps all the variables of its medicine, including `authorisation_year`, so the same table supports both the ranking of areas and their evolution over the years.
 
 ```{r}
 #| label: integrate-areas
 #| echo : false
 #| output: false
-medicines_areas <- medicines_complete |>
+# Count and rank therapeutic areas
+medicines_areas <- medicines_without_na |>
   separate_rows(`Therapeutic area (MeSH)`, sep = ";") |>
   rename(area = `Therapeutic area (MeSH)`) |>
-  mutate(area = str_trim(area)) |>
+  mutate(area = str_trim(area)) |> # eliminate blank spaces
   filter(!is.na(area), area != "")
 ```
 
@@ -343,7 +343,7 @@ The two tables serve different purposes:
 
 | Table | One row per | Used for |
 |------------------------|------------------------|------------------------|
-| `medicines_complete` | Medicine | Counting medicines, common characteristics, authorisation year |
+| `medicines_without_na` | Medicine | Counting medicines, common characteristics, authorisation year |
 | `medicines_areas` | Medicine-area pair | Ranking of therapeutic areas and their trend over time |
 
 ### Integrate data
@@ -365,16 +365,18 @@ For this step, No tables needed to be merged, since all variables come from a si
 area_counts <- medicines_areas |>
   count(area, sort = TRUE)
 
+# Ranking the top 10 therapeutic areas
 top_areas <- area_counts |>
   slice_head(n = 10) |>
   pull(area)
 
+# Authorizations per year in each area
 area_year <- medicines_areas |>
   filter(area %in% top_areas) |>
   count(authorisation_year, area)
 ```
 
-The totals of \`area_counts\` match the number of medicine-area records (r nrow(medicines_areas)), confirming that no records were lost during aggregation. Because a medicine counts once in each of its areas, the sum of the counts exceeds the number of medicines.
+The totals of \`area_counts\` match the number of medicine-area records `r nrow(medicines_areas)` confirming that no records were lost during aggregation. Because a medicine counts once in each of its areas, the sum of the counts exceeds the number of medicines.
 
 ### Format data
 
@@ -397,7 +399,8 @@ new_names <- c(
   holder = "Marketing authorisation developer / applicant / holder"
 )
 
-medicines_complete <- medicines_complete |> rename(any_of(new_names))
+# Apply new names
+medicines_without_na <- medicines_without_na |> rename(any_of(new_names))
 medicines_areas    <- medicines_areas    |> rename(any_of(new_names))
 ```
 
@@ -408,7 +411,7 @@ Related variables where grouped together in order to enhance readability.
 ```{r}
 #| label: format-order
 #| output: false
-medicines_complete <- medicines_complete |>
+medicines_without_na <- medicines_without_na |>
   relocate(authorisation_date, authorisation_year, therapeutic_area, n_areas,
            .after = holder)
            
@@ -459,6 +462,7 @@ The distribution of authorised medicines by therapeutic area (Figure 1) reveals 
 
 ```{r}
 #| label: fig-top-areas
+#| fig-cap: "Top 10 therapeutic areas by number of authorised human medicines"
 top10 <- area_counts |> slice_head(n = 10)
 
 ggplot(top10, aes(x = n, y = reorder(area, n))) +
@@ -515,7 +519,7 @@ ggplot(flag_counts, aes(x = n, y = area, fill = value)) +
   facet_wrap(~ characteristic, nrow = 2) +
   scale_fill_manual(values = c("No" = "coral1", "Yes" = "#2C7FB8")) +
   labs(x = "Number of authorised medicines", y = NULL, fill = NULL) +
-  theme_minimal() +
+  theme_classic() +
   theme(legend.position = "bottom")
 ```
 
@@ -551,7 +555,7 @@ year_area <- medicines_areas |>
 
 ```{r}
 #| label: fig-year-lines
-#| fig-cap: "Authorised medicines per year in the top 5 therapeutic areas"
+#| fig-cap: "Authorised medicines per year in the top 4 therapeutic areas"
 #| fig-width: 12
 #| fig-height: 5.5
 top4_areas <- head(top10$area, 4)
@@ -575,14 +579,26 @@ year_area |>
 
 Limitations found during the analysis:
 
-1.  Potential useful values missing or incomplete: columns such as "Start of evaluation date" are completely empty. Knowing this information could provide strong insights about the average time that each therapeutic area needs to wait before being approved.
+- **Missing or Incomplete Data:** Certain critical columns, such as "Start of evaluation date," are entirely empty. Having access to this information would have enabled valuable insights regarding the average review timeline and waiting periods associated with each therapeutic area prior to approval.
 
-2.  Small samples: information about refused medicines is no big enough to be considered for the analysis.
+<!-- -->
 
-3.  Therapeutic areas split in multiple terms or merged in one general term: Therapeutic areas such as cancer have their own individual value, however, at the same time there are specific rows for oncologic areas such as "Breast neoplasma", "Carcinoma", "Multiple myeloma" leading to an insconsistency in the way how therapeutic areas are grouped. For further analysis, it would be beneficial to establish clear rules on how therapeutic areas are classified.
+- **Small Sample Sizes:** Data concerning refused medicines was insufficient in volume, precluding its inclusion in the main comparative analysis.
 
-4.  
+- **Inconsistent Therapeutic Area Classification:** Therapeutic areas suffer from granularity inconsistencies; broad categories (such as "Cancer") coexist alongside highly specific oncological subcategories (such as "Breast neoplasms," "Carcinoma," and "Multiple myeloma"). For future analyses, establishing standardized and cohesive classification rules for therapeutic areas is recommended to ensure robust grouping.
 
-### Determine next steps
+## Deployment and communication
 
-## Data preparation
+### Summary of the analysis
+
+This project set out to analyze the European Union’s landscape of authorized human medicines, focusing on which therapeutic areas lead the market and how their regulatory and temporal profiles have evolved. By examining approval amounts, shared features, and multi year trends, several key insights can be obtained, resulting in direct strategic value for industry stakeholders, healthcare analysts, national health agencies and clinical research groups:
+
+- **Concentration in Chronic Conditions and Oncology:** The analysis reveals that medicines are heavily concentrated in specific fields, with **Breast Neoplasms**, **Diabetes Mellitus (Type 2)**, and **HIV Infections** leading the market.
+
+- **Specialized Designations are Niche:** When investigating product characteristics, **Biosimilars** show a strong presence primarily within rheumatological conditions (such as rheumatoid and psoriatic arthritis). However, special regulatory pathways like **PRIME** and **Advanced Therapies** account for a minimal share of these leading areas. This indicates that these features are highly specialized and unlikely to be found among the most mainstream medicines.
+
+- **Cyclical Waves Over Strict Seasonality:** Tracking approvals over time demonstrates that R&D output and regulatory submissions do not grow uniformly. Instead, they move in distinct multi year cycles (waves lasting 3 to 5 years).
+
+### **Strategic Takeaway for Stakeholders**
+
+Understanding these long term cyclical waves and the specific boundaries of regulatory features allows clinical research groups and decision makers to better anticipate market shifts, align pipeline development with high impact therapeutic areas, and improve long-term strategic forecasting.
