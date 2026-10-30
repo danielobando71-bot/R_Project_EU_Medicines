@@ -84,7 +84,7 @@ ul.task-list li input[type="checkbox"] {
 <p><strong>Background</strong>: the European Medicines Agency (EMA) publishes a dataset of every medicine assessed centrally in the EU, including its status, therapeutic area (MeSH), regulatory pathway and authorization dates. Understanding where authorized medicines concentrate helps identify which disease areas receive the most pharmaceutical development.</p>
 <p><strong>Business objective</strong> <strong>(research question/hypothesis):</strong> identify which therapeutic areas have the highest number of currently authorized human medicines in the EU.</p>
 <p><strong>Related questions:</strong></p>
-<p><strong>1-</strong> Which characteristics (generic, bio similar,accelerated assessment, developer, advanced therapy) are most common in the top areas?</p>
+<p><strong>1-</strong> Which characteristics are most common in the top areas?</p>
 <p><strong>2-</strong> Among currently authorized medicines, how is the distribution of the top areas by year of marketing authorization.</p>
 <p><strong>Business success criteria:</strong></p>
 <p>Success for this project is accomplished if it : delivers (a) a ranked list of the top 10 therapeutic areas with the most authorizations by the EMA, (b) a clear profile of what the top areas have in common, and (c) a visualization understandable by a non-scientific reader.</p>
@@ -289,7 +289,7 @@ ul.task-list li input[type="checkbox"] {
 <ul>
 <li><p>The excel file has 8 introductory rows before the table. To solve this, we use skip = 8.</p></li>
 <li><p>With default settings, `read_excel()` produce type-guessing warnings in two mostly empty date columns. This was solved using guess_max = 5000.</p></li>
-<li><p>Missing values: columns such as ‘marketing authorisation date’ can’t be included in the analysis as all of the values or most of them are missing.</p></li>
+<li><p>Missing values: columns such as ‘start of evaluation date’ can’t be included in the analysis as all of the values or most of them are missing.</p></li>
 </ul>
 </section>
 <section id="explore-the-data" class="level3" data-number="2.3">
@@ -661,11 +661,8 @@ Figure&nbsp;3: Authorised medicines per year in the top 4 therapeutic areas
 <p>Limitations found during the analysis:</p>
 <ul>
 <li><strong>Missing or Incomplete Data:</strong>&nbsp;Certain critical columns,&nbsp;such as “Start of evaluation date,” are entirely empty.&nbsp;Having access to this information would have enabled valuable insights regarding the average review timeline and waiting periods associated with each therapeutic area prior to approval.</li>
-</ul>
-<!-- -->
-<ul>
-<li><p><strong>Small Sample Sizes:</strong>&nbsp;Data concerning refused medicines was insufficient in volume,&nbsp;precluding its inclusion in the main comparative analysis.</p></li>
-<li><p><strong>Inconsistent Therapeutic Area Classification:</strong>&nbsp;Therapeutic areas suffer from granularity inconsistencies; broad categories (such as “Cancer”) coexist alongside highly specific oncological subcategories (such as “Breast neoplasms,” “Carcinoma,” and “Multiple myeloma”).&nbsp;For future analyses,&nbsp;establishing standardized and cohesive classification rules for therapeutic areas is recommended to ensure robust grouping.</p></li>
+<li><strong>Small Sample Sizes:</strong>&nbsp;Data concerning refused medicines was insufficient in volume,&nbsp;precluding its inclusion in the main comparative analysis.</li>
+<li><strong>Inconsistent Therapeutic Area Classification:</strong>&nbsp;Therapeutic areas suffer from granularity inconsistencies; broad categories (such as “Cancer”) coexist alongside highly specific oncological subcategories (such as “Breast neoplasms,” “Carcinoma,” and “Multiple myeloma”).&nbsp;For future analyses,&nbsp;establishing standardized and cohesive classification rules for therapeutic areas is recommended to ensure robust grouping.</li>
 </ul>
 </section>
 </section>
@@ -683,7 +680,14 @@ Figure&nbsp;3: Authorised medicines per year in the top 4 therapeutic areas
 <section id="strategic-takeaway-for-stakeholders" class="level3" data-number="6.2">
 <h3 data-number="6.2" class="anchored" data-anchor-id="strategic-takeaway-for-stakeholders"><span class="header-section-number">6.2</span> <strong>Strategic Takeaway for Stakeholders</strong></h3>
 <p>Understanding these long term cyclical waves and the specific boundaries of regulatory features allows clinical research groups and decision makers to better anticipate market shifts,&nbsp;align pipeline development with high impact therapeutic areas,&nbsp;and improve long-term strategic forecasting.</p>
+<p>*AI use declaration: AI was used as a tutor for the creation of this project. No generic code was used and all the content was fully reviewed by the author.</p>
 </section>
+</section>
+<section id="references" class="level2" data-number="7">
+<h2 data-number="7" class="anchored" data-anchor-id="references"><span class="header-section-number">7</span> References:</h2>
+<ol type="1">
+<li>Wickham,&nbsp;H.,&nbsp;Çetinkaya-Rundel,&nbsp;M.,&nbsp;&amp; Grolemund,&nbsp;G.&nbsp;(2023).&nbsp;<em>R for data science</em>&nbsp;(2nd ed.).&nbsp;<a href="https://r4ds.hadley.nz/" class="uri">https://r4ds.hadley.nz/</a></li>
+</ol>
 </section>
 
 </main>

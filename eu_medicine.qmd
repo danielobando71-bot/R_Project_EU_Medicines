@@ -605,6 +605,6 @@ Understanding these long term cyclical waves and the specific boundaries of regu
 
 \*AI use declaration: AI was used as a tutor for the creation of this project. No generic code was used and all the content was fully reviewed by the author.
 
-### References: 
+## References: 
 
 1.  Wickham, H., Çetinkaya-Rundel, M., & Grolemund, G. (2023). *R for data science* (2nd ed.). <https://r4ds.hadley.nz/>
