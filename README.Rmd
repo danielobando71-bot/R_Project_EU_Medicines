@@ -63,13 +63,12 @@ Install the packages with:
 
 #### How to run it:
 
-1.  Clone the repository
-2.  Download \`eu_medicine.xlsx\` from the link above. 
-3.  Place the file in the project's main folder (same folder as \`eu_medicine.qmd\`).
-4.  Open the \`.Rproj\` file in RStudio.
-5.  Install the packages (see Requirements).
-6.  Open \`eu_medicine.qmd\` and click **Render**
-7.  The output\`eu_medicine.html\` will be created in the same folder.
+1.  Download \`eu_medicine.xlsx\` from the link above. 
+2.  Place the file in the project's main folder (same folder as \`eu_medicine.qmd\`).
+3.  Open the \`.Rproj\` file in RStudio.
+4.  Install the packages (see Requirements).
+5.  Open \`eu_medicine.qmd\` and click **Render**
+6.  The output\`eu_medicine.html\` will be created in the same folder.
 
 #### Author
 
