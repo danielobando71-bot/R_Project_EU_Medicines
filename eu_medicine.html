@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.10.18">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Daniel Obando">
+
+<title>EU authorised medicines analysis per therapeutic area</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: 1.5em;}
+div.column{flex: auto;}
+@media screen {
+div.columns{gap: min(4vw, 1.5em);}
+div.column{overflow-x: auto;}
+}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="eu_medicine_files/libs/clipboard/clipboard.min.js"></script>
+<script src="eu_medicine_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="eu_medicine_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="eu_medicine_files/libs/quarto-html/popper.min.js"></script>
+<script src="eu_medicine_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="eu_medicine_files/libs/quarto-html/anchor.min.js"></script>
+<link href="eu_medicine_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="eu_medicine_files/libs/quarto-html/quarto-syntax-highlighting-64a204ab8560d761af7679ceaba22944.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="eu_medicine_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="eu_medicine_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="eu_medicine_files/libs/bootstrap/bootstrap-c2e55264ed47ce3b2e0326a2269f9400.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">EU authorised medicines analysis per therapeutic area</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Daniel Obando </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="business-understanding" class="level2" data-number="1">
+<h2 data-number="1" class="anchored" data-anchor-id="business-understanding"><span class="header-section-number">1</span> Business understanding</h2>
+<p>Knowing where regulatory approvals concentrate shows which disease areas receive the most pharmaceutical development and EMA attention. This helps identify where treatment options are abundant and where they are scarce.</p>
+<section id="determine-business-objectives" class="level3" data-number="1.1">
+<h3 data-number="1.1" class="anchored" data-anchor-id="determine-business-objectives"><span class="header-section-number">1.1</span> Determine Business Objectives</h3>
+<p><strong>Background</strong>: the European Medicines Agency (EMA) publishes a dataset of every medicine assessed centrally in the EU, including its status, therapeutic area (MeSH), regulatory pathway and authorization dates. Understanding where authorized medicines concentrate helps identify which disease areas receive the most pharmaceutical development.</p>
+<p><strong>Business objective</strong> <strong>(research question/hypothesis):</strong> identify which therapeutic areas have the highest number of currently authorized human medicines in the EU.</p>
+<p><strong>Related questions:</strong></p>
+<p><strong>1-</strong> Which characteristics (generic, bio similar,accelerated assessment, developer, advanced therapy) are most common in the top areas?</p>
+<p><strong>2-</strong> Among currently authorized medicines, how is the distribution of the top areas by year of marketing authorization.</p>
+<p><strong>Business success criteria:</strong></p>
+<p>Success for this project is accomplished if it : delivers (a) a ranked list of the top 10 therapeutic areas with the most authorizations by the EMA, (b) a clear profile of what the top areas have in common, and (c) a visualization understandable by a non-scientific reader.</p>
+</section>
+<section id="assessing-the-situation" class="level3" data-number="1.2">
+<h3 data-number="1.2" class="anchored" data-anchor-id="assessing-the-situation"><span class="header-section-number">1.2</span> Assessing the situation</h3>
+<p><strong>Inventory of resources:</strong></p>
+<ul>
+<li><p>EMA data-set (Excel, 2,748 records, 39 columns, downloaded 11/10/2026)</p></li>
+<li><p>RStudio</p></li>
+<li><p>Tidyverse, Quarto, Git</p></li>
+</ul>
+<p><strong>Assumptions about the data:</strong></p>
+<ul>
+<li><p>Currency: data provided by the EMA contains accurate and up to date information about all listed medicines.</p></li>
+<li><p>Data integrity: provided attributes for each medicine are officially validated.</p></li>
+<li><p>A medicine is considered as currently available in the European market only if the column “Medicine Status” is equal to “Authorised”.</p></li>
+<li><p>Every authorised medicine have the same weight in the analysis, regardless of sales volume or clinical impact.</p></li>
+</ul>
+</section>
+<section id="determining-data-mining-goals" class="level3" data-number="1.3">
+<h3 data-number="1.3" class="anchored" data-anchor-id="determining-data-mining-goals"><span class="header-section-number">1.3</span> Determining Data Mining Goals</h3>
+<p><strong>Goal:</strong> count and rank therapeutic areas by number of authorised human medicines, then describe the top areas.</p>
+<p><strong>Problem type:</strong> data description and summarization, with some segmentation by area.</p>
+<p><strong>Technical success criteria:</strong> the counts are reproducible and every filtering and counting decision is documented in the code.</p>
+</section>
+<section id="produce-project-plan" class="level3" data-number="1.4">
+<h3 data-number="1.4" class="anchored" data-anchor-id="produce-project-plan"><span class="header-section-number">1.4</span> Produce Project Plan</h3>
+<p>Follow the six CRISP-DM phases to answer the question “Which therapeutic areas have the highest number of currently authorized human medicines in the EU?”.</p>
+<p>For achieving this goal, RStudio is going to be used to develop a Quarto Report, using the following tools: readxl, dplyr, tidyr, lubridate, ggplot2 and Git.</p>
+<pre><code></code></pre>
+</section>
+</section>
+<section id="data-understanding" class="level2" data-number="2">
+<h2 data-number="2" class="anchored" data-anchor-id="data-understanding"><span class="header-section-number">2</span> Data understanding</h2>
+<section id="collecting-the-initial-data" class="level3" data-number="2.1">
+<h3 data-number="2.1" class="anchored" data-anchor-id="collecting-the-initial-data"><span class="header-section-number">2.1</span> Collecting the initial data</h3>
+<p>The first step for the data understanding will be importing our data set and libraries needed. The date came from the <a href="https://www.ema.europa.eu/en/medicines/download-medicine-data">EMA website</a>.</p>
+</section>
+<section id="describe-the-data" class="level3" data-number="2.2">
+<h3 data-number="2.2" class="anchored" data-anchor-id="describe-the-data"><span class="header-section-number">2.2</span> Describe the data</h3>
+<p>The data set contains 2,748 records and 39 variables. Each record is a medicine assessed by the EMA.</p>
+<div class="cell">
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">Category</th>
+<th style="text-align: left;">Medicine status</th>
+<th style="text-align: right;">n</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Authorised</td>
+<td style="text-align: right;">1568</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Withdrawn</td>
+<td style="text-align: right;">368</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Application withdrawn</td>
+<td style="text-align: right;">268</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Refused</td>
+<td style="text-align: right;">65</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Lapsed</td>
+<td style="text-align: right;">27</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Opinion</td>
+<td style="text-align: right;">23</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Expired</td>
+<td style="text-align: right;">17</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Revoked</td>
+<td style="text-align: right;">10</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Opinion under re-examination</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Withdrawn from rolling review</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Human</td>
+<td style="text-align: left;">Suspended</td>
+<td style="text-align: right;">1</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Authorised</td>
+<td style="text-align: right;">308</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Withdrawn</td>
+<td style="text-align: right;">57</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Application withdrawn</td>
+<td style="text-align: right;">18</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Opinion</td>
+<td style="text-align: right;">5</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Refused</td>
+<td style="text-align: right;">4</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Expired</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Lapsed</td>
+<td style="text-align: right;">2</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Veterinary</td>
+<td style="text-align: left;">Suspended</td>
+<td style="text-align: right;">1</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>The dataset includes both human and veterinary medicines. Since the business question refers to human medicines only, veterinary records were excluded from the analysis, leaving 2351 human medicines, of which 1568 have an “Authorised” status.</p>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1568</code></pre>
+</div>
+</div>
+<p>The data set contains variable needed to answer the business question:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Variable</th>
+<th>Description</th>
+<th>Type</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Category</code></td>
+<td>Human or veterinary</td>
+<td>Text</td>
+</tr>
+<tr class="even">
+<td><code>Medicine status</code></td>
+<td>Authorised, withdrawn, etc.</td>
+<td>Text</td>
+</tr>
+<tr class="odd">
+<td><code>Therapeutic area (MeSH)</code></td>
+<td>Disease area(s), separated by <code>;</code></td>
+<td>Text</td>
+</tr>
+<tr class="even">
+<td><code>Generic, Biosimilar</code></td>
+<td>Medicine characteristic</td>
+<td>Text</td>
+</tr>
+<tr class="odd">
+<td><code>Marketing authorisation date</code>, <code>PRIME: priority medicine,</code> <code>Advanced therapy</code></td>
+<td>Regulatory characteristics</td>
+<td>Text</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Problems encountered with the data:</strong></p>
+<ul>
+<li><p>The excel file has 8 introductory rows before the table. To solve this, we use skip = 8.</p></li>
+<li><p>With default settings, `read_excel()` produce type-guessing warnings in two mostly empty date columns. This was solved using guess_max = 5000.</p></li>
+<li><p>Missing values: columns such as ‘marketing authorisation date’ can’t be included in the analysis as all of the values or most of them are missing.</p></li>
+</ul>
+</section>
+<section id="explore-the-data" class="level3" data-number="2.3">
+<h3 data-number="2.3" class="anchored" data-anchor-id="explore-the-data"><span class="header-section-number">2.3</span> Explore the data</h3>
+<p><strong>Therapeutic area</strong></p>
+<p>Due the format of the data, a medicine can have several areas separated by “;”, they are split into one row per area before counting. A medicine is therefore, counted once in each of its areas.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="eu_medicine_files/figure-html/explore-areas-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+<p><strong>Authorisation year.</strong></p>
+<div class="cell">
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Removed 1 row containing missing values or values outside the scale range
+(`geom_col()`).</code></pre>
+</div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="eu_medicine_files/figure-html/unnamed-chunk-3-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="verify-data-quality" class="level3" data-number="2.4">
+<h3 data-number="2.4" class="anchored" data-anchor-id="verify-data-quality"><span class="header-section-number">2.4</span> Verify data quality</h3>
+<p><strong>Quality checks</strong></p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<tbody>
+<tr class="odd">
+<td><strong>Quality issue</strong></td>
+<td><strong>Evidence founded</strong></td>
+<td><strong>Consequence for the analysis</strong></td>
+<td><strong>Action (Phase 3)</strong></td>
+</tr>
+<tr class="even">
+<td>Multiple areas per medicine</td>
+<td>571 medicines have more than one area</td>
+<td>Counting by area adds up to more than 1,568, so totals are not additive</td>
+<td>Split with <code>separate_rows()</code> and state the counting rule</td>
+</tr>
+<tr class="odd">
+<td>Inconsistent granularity for therapeutic areas terms</td>
+<td>Related terms are separated in 2 or general terms group in 1 term (566 distinct areas).</td>
+<td>The ranking is fragmented and may understate broad areas</td>
+<td>Document the limitation or group related terms</td>
+</tr>
+<tr class="even">
+<td>Missing therapeutic area</td>
+<td>13 records missing</td>
+<td>These medicines are excluded from the ranking</td>
+<td>Exclude only from that analysis</td>
+</tr>
+<tr class="odd">
+<td>Missing authorisation date</td>
+<td>6 records missing</td>
+<td>They cannot be placed in the time analysis</td>
+<td>Exclude only from the trend question</td>
+</tr>
+<tr class="even">
+<td>Dates stored as text (day/month/year)</td>
+<td>Observed in source file</td>
+<td>Sorting and grouping by year would be wrong</td>
+<td>Convert with <code>as_date()</code></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="data-preparation" class="level2" data-number="3">
+<h2 data-number="3" class="anchored" data-anchor-id="data-preparation"><span class="header-section-number">3</span> Data preparation</h2>
+<section id="select-the-data" class="level3" data-number="3.1">
+<h3 data-number="3.1" class="anchored" data-anchor-id="select-the-data"><span class="header-section-number">3.1</span> Select the data</h3>
+<p>Data selection was guided by three criteria defined in CRISP-DM: relevance to the data mining goals, data quality, and technical constraints. Selection was applied to both records (rows) and attributes (columns).</p>
+<section id="rationale-for-inclusionexclusion" class="level4" data-number="3.1.1">
+<h4 data-number="3.1.1" class="anchored" data-anchor-id="rationale-for-inclusionexclusion"><span class="header-section-number">3.1.1</span> Rationale for inclusion/exclusion</h4>
+<p>Veterinary medicines and human medicines with a status other than “Authorised” were excluded, as the business question concerns currently authorised human medicines.</p>
+<p>Initially, the inclusion of <em>refused medicines</em> was considered, in order to compare them with authorised ones. However, the number of refused medicines is very low compared with the number of authorised medicines (65 vs.&nbsp;1,568). It is considered that this imbalance makes it difficult to carry out a meaningful analysis, so refused medicines were excluded.</p>
+<p>Of the 39 original variables, only those needed for the three questions were kept: therapeutic area, authorisation date, medicine (Generic, Biosimilar )and regulatory related characteristics (Advanced therapy, PRIME: priority medicine).</p>
+</section>
+</section>
+<section id="clean-the-data" class="level3" data-number="3.2">
+<h3 data-number="3.2" class="anchored" data-anchor-id="clean-the-data"><span class="header-section-number">3.2</span> Clean the data</h3>
+<section id="removing-missing-values" class="level4" data-number="3.2.1">
+<h4 data-number="3.2.1" class="anchored" data-anchor-id="removing-missing-values"><span class="header-section-number">3.2.1</span> Removing missing values</h4>
+<p>Records with missing values in any of the selected variables were removed using <em>na.omit()</em>. This reduced the working dataset from 1,568 to <strong>1,532</strong> records (36 records, 2.3%). Of these, <strong>13</strong> lacked a therapeutic area, <strong>6</strong> lacked a marketing authorisation date, and <strong>17</strong> had missing values in Marketing authorisation developer / applicant / holder. Since the removed records represent a small share of the dataset, their impact on the results is considered minimal.</p>
+</section>
+<section id="normalize-text-per-area" class="level4" data-number="3.2.2">
+<h4 data-number="3.2.2" class="anchored" data-anchor-id="normalize-text-per-area"><span class="header-section-number">3.2.2</span> Normalize text per area</h4>
+<p>As shown in Phase 2, some records contained multiple therapeutic areas separated by semicolons (;). These values were split into individual therapeutic areas to allow each area to be counted separately.</p>
+<p>As dates in <code>Marketing authorisation date</code> are formatted as text, part of the cleaning consist in transforming those dates into a “date” type object. For this, we call the package library(lubridate), using the function as_date().</p>
+</section>
+</section>
+<section id="construct-data" class="level3" data-number="3.3">
+<h3 data-number="3.3" class="anchored" data-anchor-id="construct-data"><span class="header-section-number">3.3</span> Construct data</h3>
+<p><strong>Derived attributes</strong></p>
+<p>Two variables were derived from existing columns at the medicine level (one row per medicine):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>New variable</th>
+<th>Derived from</th>
+<th>Description</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>authorisation_year</code></td>
+<td><code>Marketing authorisation date</code></td>
+<td>Year of authorisation, extracted after converting the date from text (day/month/year)</td>
+<td>Supporting question 2 (trend over the years)</td>
+</tr>
+<tr class="even">
+<td><code>n_areas</code></td>
+<td><code>Therapeutic area (MeSH)</code></td>
+<td>Number of therapeutic areas of each medicine, computed by counting the <code>;</code> separators plus one</td>
+<td>Quantifies the multiple-area issue found in section 2.4</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Generated records</strong></p>
+<p>One single medicine can belong to several therapeutic areas separated by <code>;</code>, so counting areas requires one record per medicine area. Using <code>separate_rows()</code>, a new table, <code>medicines_areas</code>, was generated. Each record keeps all the variables of its medicine, including <code>authorisation_year</code>, so the same table supports both the ranking of areas and their evolution over the years.</p>
+<p>The two tables serve different purposes:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Table</th>
+<th>One row per</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>medicines_without_na</code></td>
+<td>Medicine</td>
+<td>Counting medicines, common characteristics, authorisation year</td>
+</tr>
+<tr class="even">
+<td><code>medicines_areas</code></td>
+<td>Medicine-area pair</td>
+<td>Ranking of therapeutic areas and their trend over time</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="integrate-data" class="level3" data-number="3.4">
+<h3 data-number="3.4" class="anchored" data-anchor-id="integrate-data"><span class="header-section-number">3.4</span> Integrate data</h3>
+<p>For this step, No tables needed to be merged, since all variables come from a single source&nbsp;(the EMA dataset). Integration for this project was limited to aggregation, summary&nbsp;tables were computed from&nbsp;`medicines_areas`&nbsp;so that each business question has&nbsp;a dedicated business ready table.</p>
+<table class="caption-top table">
+<caption>Ready to use tables</caption>
+<colgroup>
+<col style="width: 26%">
+<col style="width: 36%">
+<col style="width: 36%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Table</th>
+<th>Content</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>`area_counts`</td>
+<td>Number of authorised human medicines per therapeutic area</td>
+<td>Main question: ranking of areas</td>
+</tr>
+<tr class="even">
+<td>`area_year`</td>
+<td>Medicines per authorisation year for the 10 leading areas</td>
+<td>Supporting question 2: trend over the years</td>
+</tr>
+</tbody>
+</table>
+<p>The totals of&nbsp;`area_counts`&nbsp;match the number of medicine-area records&nbsp;2696 confirming that no records were lost during&nbsp;aggregation. Because a medicine counts once in each of its areas, the sum of&nbsp;the counts exceeds the number of medicines.</p>
+</section>
+<section id="format-data" class="level3" data-number="3.5">
+<h3 data-number="3.5" class="anchored" data-anchor-id="format-data"><span class="header-section-number">3.5</span> Format data</h3>
+<p>For the format of the data, only syntactic changes were made, none of which alter the meaning of the data.</p>
+<section id="rename-columns" class="level4" data-number="3.5.1">
+<h4 data-number="3.5.1" class="anchored" data-anchor-id="rename-columns"><span class="header-section-number">3.5.1</span> Rename columns</h4>
+<p>Renamed to short, lowercase names without spaces (e.g., <code>holder</code>, <code>prime</code>) | Avoids backticks and typing errors in the code.</p>
+</section>
+<section id="order-the-columns" class="level4" data-number="3.5.2">
+<h4 data-number="3.5.2" class="anchored" data-anchor-id="order-the-columns"><span class="header-section-number">3.5.2</span> Order the columns</h4>
+<p>Related variables where grouped together in order to enhance readability.</p>
+</section>
+</section>
+</section>
+<section id="modelling-analysis" class="level2" data-number="4">
+<h2 data-number="4" class="anchored" data-anchor-id="modelling-analysis"><span class="header-section-number">4</span> Modelling / analysis</h2>
+<section id="select-modeling-technique" class="level3" data-number="4.1">
+<h3 data-number="4.1" class="anchored" data-anchor-id="select-modeling-technique"><span class="header-section-number">4.1</span> Select modeling technique</h3>
+<p>The “model” used is a set of descriptive techniques, implemented with <code>dplyr</code> and <code>ggplot2</code>, using frequency counts, proportions by group and time-series counts.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Question</th>
+<th>Technique</th>
+<th>Visualisation</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Main</strong>: which therapeutic areas have the most authorised medicines?</td>
+<td>Frequency count of medicines per area, ranked in descending order</td>
+<td>Horizontal bar chart of the top 10 areas.</td>
+</tr>
+<tr class="even">
+<td><strong>Supporting 1:</strong> which characteristics are repeated in the leading areas?</td>
+<td>Count and share of “Yes” vs.&nbsp;“No” for each characteristic (generic, biosimilar, PRIME, advanced therapy) within each area, compared with all authorised medicines</td>
+<td>Stacked bar charts, one panel per characteristic.</td>
+</tr>
+<tr class="odd">
+<td><strong>Supporting 2:</strong> how has the pattern changed over the years?</td>
+<td>Count of medicines per authorisation year in the top 4 areas, over the last 20 years</td>
+<td>Line chart (one line per area)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="why-these-techniques-suit-the-questions" class="level3" data-number="4.2">
+<h3 data-number="4.2" class="anchored" data-anchor-id="why-these-techniques-suit-the-questions"><span class="header-section-number">4.2</span> Why these techniques suit the questions?</h3>
+<ul>
+<li><p>The main question asks <em>how many</em>, so counting and ranking answers it directly, with no further transformation.</p></li>
+<li><p>The second question asks which characteristics are <em>repeated</em>. A count alone would be misleading because areas differ in size, so shares within each area are used. Comparing them with the share in all authorised medicines shows whether a characteristic is really more frequent in the leading areas.</p></li>
+<li><p>The third question asks about change over time, which requires a time series. Yearly counts keep the resolution needed to see peaks, and the line chart allows the trajectory of each area to be followed in one plot.</p></li>
+</ul>
+</section>
+<section id="modeling-assumptions" class="level3" data-number="4.3">
+<h3 data-number="4.3" class="anchored" data-anchor-id="modeling-assumptions"><span class="header-section-number">4.3</span> Modeling assumptions</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Assumption</th>
+<th>Where it matters</th>
+<th>Check</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>A medicine is “currently authorised” if <code>Medicine status = Authorised</code>, and the file (downloaded on 11/10/2026) is complete and up to date</td>
+<td>All analyses</td>
+<td>Documented in 2.2</td>
+</tr>
+<tr class="even">
+<td>A medicine counts once in each of its areas, so area counts overlap and do not add up to the number of medicines</td>
+<td>Ranking, characteristics, trend</td>
+<td><code>sum(area_counts$n) == nrow(medicines_areas)</code></td>
+</tr>
+<tr class="odd">
+<td>Every medicine has the same weight, regardless of its market size or clinical importance</td>
+<td>Ranking</td>
+<td>Descriptive scope only</td>
+</tr>
+<tr class="even">
+<td>Yes/No columns are correctly coded, and “No” means the characteristic does not apply</td>
+<td>Characteristics</td>
+<td>Values checked in 3.5</td>
+</tr>
+<tr class="odd">
+<td>Records with missing values (36 of 1,568, 2.3%) were removed without changing the results</td>
+<td>All analyses</td>
+<td>Reported in 3.2</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Limitations that follow from these assumptions.</strong> The analysis only includes medicines that are still authorised, so earlier years are under-represented, and 2026 is a partial year.</p>
+</section>
+</section>
+<section id="evaluation" class="level2" data-number="5">
+<h2 data-number="5" class="anchored" data-anchor-id="evaluation"><span class="header-section-number">5</span> Evaluation</h2>
+<section id="evaluate-the-results" class="level3" data-number="5.1">
+<h3 data-number="5.1" class="anchored" data-anchor-id="evaluate-the-results"><span class="header-section-number">5.1</span> Evaluate the results</h3>
+<section id="top-10-therapeutic-areas" class="level4" data-number="5.1.1">
+<h4 data-number="5.1.1" class="anchored" data-anchor-id="top-10-therapeutic-areas"><span class="header-section-number">5.1.1</span> Top 10 therapeutic areas</h4>
+<p>The distribution of authorised medicines by therapeutic area (Figure 1) reveals a distinct concentration in oncology and chronic diseases.&nbsp;<strong>Breast Neoplasms</strong>&nbsp;records the highest number of authorisations with 65, followed by&nbsp;<strong>Diabetes Mellitus, Type 2</strong>&nbsp;(59) and&nbsp;<strong>HIV Infections</strong>&nbsp;(57). At the lower end of the top 10,&nbsp;<strong>Cancer</strong>&nbsp;registers 31 authorisations.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-top-areas" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-top-areas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="eu_medicine_files/figure-html/fig-top-areas-1.png" class="img-fluid figure-img" width="672">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-top-areas-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;1: Top 10 therapeutic areas by number of authorised human medicines
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="characteristics-of-the-top-areas" class="level4" data-number="5.1.2">
+<h4 data-number="5.1.2" class="anchored" data-anchor-id="characteristics-of-the-top-areas"><span class="header-section-number">5.1.2</span> Characteristics of the top areas</h4>
+<p>To further examine the regulatory features of these treatments, the top 10 therapeutic areas were disaggregated by designation type (Figure 2). While categories such as&nbsp;<strong>PRIME</strong>&nbsp;and&nbsp;<strong>Advanced therapy</strong>&nbsp;account for a minimal or negligible proportion of authorised medicines across these leading areas,&nbsp;<strong>Biosimilars</strong>&nbsp;constitute a substantial share within rheumatological conditions (such as&nbsp;<em>Arthritis, Rheumatoid</em>&nbsp;and&nbsp;<em>Arthritis, Psoriatic</em>). Additionally,&nbsp;<strong>Generics</strong>&nbsp;maintain a steady presence across several leading chronic and infectious conditions, particularly&nbsp;<em>HIV Infections</em>&nbsp;and&nbsp;<em>Breast Neoplasms</em>.</p>
+<p>Consequently, given the results observed for <strong>PRIME</strong> and <strong>Advanced therapies</strong>, it can be concluded that&nbsp;these specific features are <strong>highly unlikely</strong> to be seen among the most extensively studied and established medicines in the market.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-flags-count" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-flags-count-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="eu_medicine_files/figure-html/fig-flags-count-1.png" class="img-fluid figure-img" width="768">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-flags-count-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;2: Characteristics of medicines in the leading therapeutic areas (counts)
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="trend-of-the-top-4-areas-over-the-years" class="level4" data-number="5.1.3">
+<h4 data-number="5.1.3" class="anchored" data-anchor-id="trend-of-the-top-4-areas-over-the-years"><span class="header-section-number">5.1.3</span> Trend of the top 4 areas over the years</h4>
+<p>To evaluate how the distribution of leading therapeutic approvals has evolved and to identify potential temporal patterns, the annual number of authorised medicines was tracked across the top four areas (Figure 3). The data demonstrate a clear shift in research momentum over time: while&nbsp;<strong>Diabetes Mellitus, Type 2</strong>&nbsp;led earlier approvals and&nbsp;<strong>HIV Infections</strong> experienced a sharp surge around 2016,&nbsp;<strong>Breast Neoplasms</strong>&nbsp;has emerged as the most consistently high volume area in recent years.</p>
+<p>Although monthly seasonality cannot be inferred from annual resolution, the trajectories reveal distinct multi year cyclical waves (3 to 5 year intervals) rather than uniform growth. For clinical research groups, these cyclical surges suggest that R&amp;D productivity and regulatory submissions in these major fields move in synchronized waves, which should be factored into long term strategic planning and pipeline forecasting.</p>
+<div class="cell">
+<div class="cell-output-display">
+<div id="fig-year-lines" class="quarto-float quarto-figure quarto-figure-center anchored">
+<figure class="quarto-float quarto-float-fig figure">
+<div aria-describedby="fig-year-lines-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+<img src="eu_medicine_files/figure-html/fig-year-lines-1.png" class="img-fluid figure-img" width="1152">
+</div>
+<figcaption class="quarto-float-caption-bottom quarto-float-caption quarto-float-fig" id="fig-year-lines-caption-0ceaefa1-69ba-4598-a22c-09a6ac19f8ca">
+Figure&nbsp;3: Authorised medicines per year in the top 4 therapeutic areas
+</figcaption>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="review-process" class="level3" data-number="5.2">
+<h3 data-number="5.2" class="anchored" data-anchor-id="review-process"><span class="header-section-number">5.2</span> Review process</h3>
+<p>Limitations found during the analysis:</p>
+<ul>
+<li><strong>Missing or Incomplete Data:</strong>&nbsp;Certain critical columns,&nbsp;such as “Start of evaluation date,” are entirely empty.&nbsp;Having access to this information would have enabled valuable insights regarding the average review timeline and waiting periods associated with each therapeutic area prior to approval.</li>
+</ul>
+<!-- -->
+<ul>
+<li><p><strong>Small Sample Sizes:</strong>&nbsp;Data concerning refused medicines was insufficient in volume,&nbsp;precluding its inclusion in the main comparative analysis.</p></li>
+<li><p><strong>Inconsistent Therapeutic Area Classification:</strong>&nbsp;Therapeutic areas suffer from granularity inconsistencies; broad categories (such as “Cancer”) coexist alongside highly specific oncological subcategories (such as “Breast neoplasms,” “Carcinoma,” and “Multiple myeloma”).&nbsp;For future analyses,&nbsp;establishing standardized and cohesive classification rules for therapeutic areas is recommended to ensure robust grouping.</p></li>
+</ul>
+</section>
+</section>
+<section id="deployment-and-communication" class="level2" data-number="6">
+<h2 data-number="6" class="anchored" data-anchor-id="deployment-and-communication"><span class="header-section-number">6</span> Deployment and communication</h2>
+<section id="summary-of-the-analysis" class="level3" data-number="6.1">
+<h3 data-number="6.1" class="anchored" data-anchor-id="summary-of-the-analysis"><span class="header-section-number">6.1</span> Summary of the analysis</h3>
+<p>This project set out to analyze the European Union’s landscape of authorized human medicines,&nbsp;focusing on which therapeutic areas lead the market and how their regulatory and temporal profiles have evolved.&nbsp;By examining approval amounts,&nbsp;shared features,&nbsp;and multi year trends,&nbsp;several key insights can be obtained, resulting in direct strategic value for industry stakeholders,&nbsp;healthcare analysts,&nbsp;national health agencies and clinical research groups:</p>
+<ul>
+<li><p><strong>Concentration in Chronic Conditions and Oncology:</strong>&nbsp;The analysis reveals that medicines are heavily concentrated in specific fields, with&nbsp;<strong>Breast Neoplasms</strong>,&nbsp;<strong>Diabetes Mellitus (Type 2)</strong>, and&nbsp;<strong>HIV Infections</strong>&nbsp;leading the market.</p></li>
+<li><p><strong>Specialized Designations are Niche:</strong>&nbsp;When investigating product characteristics,&nbsp;<strong>Biosimilars</strong>&nbsp;show a strong presence primarily within rheumatological conditions (such as rheumatoid and psoriatic arthritis). However, special regulatory pathways like&nbsp;<strong>PRIME</strong>&nbsp;and&nbsp;<strong>Advanced Therapies</strong>&nbsp;account for a minimal share of these leading areas. This indicates that these features are highly specialized and unlikely to be found among the most mainstream medicines.</p></li>
+<li><p><strong>Cyclical Waves Over Strict Seasonality:</strong>&nbsp;Tracking approvals over time demonstrates that R&amp;D output and regulatory submissions do not grow uniformly.&nbsp;Instead,&nbsp;they move in distinct multi year cycles (waves lasting 3 to 5 years).</p></li>
+</ul>
+</section>
+<section id="strategic-takeaway-for-stakeholders" class="level3" data-number="6.2">
+<h3 data-number="6.2" class="anchored" data-anchor-id="strategic-takeaway-for-stakeholders"><span class="header-section-number">6.2</span> <strong>Strategic Takeaway for Stakeholders</strong></h3>
+<p>Understanding these long term cyclical waves and the specific boundaries of regulatory features allows clinical research groups and decision makers to better anticipate market shifts,&nbsp;align pipeline development with high impact therapeutic areas,&nbsp;and improve long-term strategic forecasting.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>

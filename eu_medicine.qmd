@@ -9,7 +9,6 @@ echo: false
 message: false
 ---
 
-
 ## Business understanding
 
 Knowing where regulatory approvals concentrate shows which disease areas receive the most pharmaceutical development and EMA attention. This helps identify where treatment options are abundant and where they are scarce.
@@ -111,7 +110,7 @@ nrow(target)
 The data set contains variable needed to answer the business question:
 
 | Variable | Description | Type |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | `Category` | Human or veterinary | Text |
 | `Medicine status` | Authorised, withdrawn, etc. | Text |
 | `Therapeutic area (MeSH)` | Disease area(s), separated by `;` | Text |
@@ -195,7 +194,7 @@ target |>
 ```
 
 |  |  |  |  |
-|------------------|------------------|------------------|------------------|
+|----|----|----|----|
 | **Quality issue** | **Evidence founded** | **Consequence for the analysis** | **Action (Phase 3)** |
 | Multiple areas per medicine | 571 medicines have more than one area | Counting by area adds up to more than 1,568, so totals are not additive | Split with `separate_rows()` and state the counting rule |
 | Inconsistent granularity for therapeutic areas terms | Related terms are separated in 2 or general terms group in 1 term (566 distinct areas). | The ranking is fragmented and may understate broad areas | Document the limitation or group related terms |
@@ -297,7 +296,7 @@ medicines_without_na |>
 Two variables were derived from existing columns at the medicine level (one row per medicine):
 
 | New variable | Derived from | Description | Purpose |
-|------------------|------------------|------------------|------------------|
+|----|----|----|----|
 | `authorisation_year` | `Marketing authorisation date` | Year of authorisation, extracted after converting the date from text (day/month/year) | Supporting question 2 (trend over the years) |
 | `n_areas` | `Therapeutic area (MeSH)` | Number of therapeutic areas of each medicine, computed by counting the `;` separators plus one | Quantifies the multiple-area issue found in section 2.4 |
 
@@ -344,7 +343,7 @@ medicines_areas <- medicines_without_na |>
 The two tables serve different purposes:
 
 | Table | One row per | Used for |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | `medicines_without_na` | Medicine | Counting medicines, common characteristics, authorisation year |
 | `medicines_areas` | Medicine-area pair | Ranking of therapeutic areas and their trend over time |
 
@@ -353,7 +352,7 @@ The two tables serve different purposes:
 For this step, No tables needed to be merged, since all variables come from a single source (the EMA dataset). Integration for this project was limited to aggregation, summary tables were computed from \`medicines_areas\` so that each business question has a dedicated business ready table.
 
 | Table | Content | Used for |
-|-------------------|---------------------------|---------------------------|
+|----|----|----|
 | \`area_counts\` | Number of authorised human medicines per therapeutic area | Main question: ranking of areas |
 | \`area_year\` | Medicines per authorisation year for the 10 leading areas | Supporting question 2: trend over the years |
 
@@ -429,7 +428,7 @@ medicines_areas <- medicines_areas |>
 The "model" used is a set of descriptive techniques, implemented with `dplyr` and `ggplot2`, using frequency counts, proportions by group and time-series counts.
 
 | Question | Technique | Visualisation |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | **Main**: which therapeutic areas have the most authorised medicines? | Frequency count of medicines per area, ranked in descending order | Horizontal bar chart of the top 10 areas. |
 | **Supporting 1:** which characteristics are repeated in the leading areas? | Count and share of "Yes" vs. "No" for each characteristic (generic, biosimilar, PRIME, advanced therapy) within each area, compared with all authorised medicines | Stacked bar charts, one panel per characteristic. |
 | **Supporting 2:** how has the pattern changed over the years? | Count of medicines per authorisation year in the top 4 areas, over the last 20 years | Line chart (one line per area) |
@@ -445,7 +444,7 @@ The "model" used is a set of descriptive techniques, implemented with `dplyr` an
 ### Modeling assumptions
 
 | Assumption | Where it matters | Check |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | A medicine is "currently authorised" if `Medicine status = Authorised`, and the file (downloaded on 11/10/2026) is complete and up to date | All analyses | Documented in 2.2 |
 | A medicine counts once in each of its areas, so area counts overlap and do not add up to the number of medicines | Ranking, characteristics, trend | `sum(area_counts$n) == nrow(medicines_areas)` |
 | Every medicine has the same weight, regardless of its market size or clinical importance | Ranking | Descriptive scope only |
@@ -608,4 +607,4 @@ This project set out to analyze the European Union’s landscape of authorized h
 
 Understanding these long term cyclical waves and the specific boundaries of regulatory features allows clinical research groups and decision makers to better anticipate market shifts, align pipeline development with high impact therapeutic areas, and improve long-term strategic forecasting.
 
-* AI use declaration: AI was used as a tutor for the creation of this project. No generic code was used and all the content was fully reviewed by the author.
+- AI use declaration: AI was used as a tutor for the creation of this project. No generic code was used and all the content was fully reviewed by the author.
