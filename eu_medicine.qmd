@@ -1,5 +1,5 @@
 ---
-title: "EU Medicine Report"
+title: "EU authorised medicines analysis per therapeutic area"
 author: "Daniel Obando"
 format: html
 editor: visual
@@ -9,7 +9,6 @@ echo: false
 message: false
 ---
 
-Data Handling Project: EU Medicines report
 
 ## Business understanding
 
@@ -202,7 +201,7 @@ target |>
 | Inconsistent granularity for therapeutic areas terms | Related terms are separated in 2 or general terms group in 1 term (566 distinct areas). | The ranking is fragmented and may understate broad areas | Document the limitation or group related terms |
 | Missing therapeutic area | 13 records missing | These medicines are excluded from the ranking | Exclude only from that analysis |
 | Missing authorisation date | 6 records missing | They cannot be placed in the time analysis | Exclude only from the trend question |
-| Dates stored as text (day/month/year) | Observed in source file | Sorting and grouping by year would be wrong | Convert with `dmy()` |
+| Dates stored as text (day/month/year) | Observed in source file | Sorting and grouping by year would be wrong | Convert with `as_date()` |
 
 ## Data preparation
 
@@ -387,7 +386,7 @@ For the format of the data, only syntactic changes were made, none of which alte
 
 #### Rename columns
 
-Renamed to short, lowercase names without spaces (e.g., `holder`, `prime`) \| Avoids backticks and typing errors in the code
+Renamed to short, lowercase names without spaces (e.g., `holder`, `prime`) \| Avoids backticks and typing errors in the code.
 
 ```{r}
 #| label: format-names
@@ -435,7 +434,7 @@ The "model" used is a set of descriptive techniques, implemented with `dplyr` an
 | **Supporting 1:** which characteristics are repeated in the leading areas? | Count and share of "Yes" vs. "No" for each characteristic (generic, biosimilar, PRIME, advanced therapy) within each area, compared with all authorised medicines | Stacked bar charts, one panel per characteristic. |
 | **Supporting 2:** how has the pattern changed over the years? | Count of medicines per authorisation year in the top 4 areas, over the last 20 years | Line chart (one line per area) |
 
-**Why these techniques suit the questions?**
+### Why these techniques suit the questions?
 
 - The main question asks *how many*, so counting and ranking answers it directly, with no further transformation.
 
@@ -443,7 +442,7 @@ The "model" used is a set of descriptive techniques, implemented with `dplyr` an
 
 - The third question asks about change over time, which requires a time series. Yearly counts keep the resolution needed to see peaks, and the line chart allows the trajectory of each area to be followed in one plot.
 
-  **Modeling assumptions.**
+### Modeling assumptions
 
 | Assumption | Where it matters | Check |
 |------------------------|------------------------|------------------------|
@@ -490,6 +489,7 @@ top_areas_n <- area_counts |> slice_head(n = 10) |> pull(area)
 
 ```{r}
 #| label: flag-counts
+# Create a named vector for renaming and labeling regulatory characteristics
 flag_labels <- c(
   generic = "Generic",
   prime = "PRIME",
@@ -497,15 +497,14 @@ flag_labels <- c(
   biosimilar = "Biosimilar"
 )
 
+# Count how many times each characteristic appears
 flag_counts <- medicines_areas |>
-  filter(area %in% top_areas_n) |>
-  mutate(across(all_of(names(flag_labels)),
-                ~ if_else(.x %in% c(TRUE, "Yes"), "Yes", "No"))) |>
-  pivot_longer(all_of(names(flag_labels)),
+  filter(area %in% top_areas_n) |> # show only top 10 areas
+  pivot_longer(all_of(names(flag_labels)), #Reshape the data from wide to long format
                names_to = "characteristic", values_to = "value") |>
   count(area, characteristic, value) |>
   mutate(
-    area = factor(area, levels = rev(top_areas_n)),
+    area = factor(area, levels = rev(top_areas_n)), #top area appears at the very top of the chart.
     characteristic = factor(characteristic,
                             levels = names(flag_labels),
                             labels = flag_labels)
@@ -515,12 +514,10 @@ flag_counts <- medicines_areas |>
 ```{r}
 #| label: fig-flags-count
 #| fig-cap: "Characteristics of medicines in the leading therapeutic areas (counts)"
-#| fig-width: 11
-#| fig-height: 6
+#| fig-width: 8
 ggplot(flag_counts, aes(x = n, y = area, fill = value)) +
   geom_col() +
-  facet_wrap(~ characteristic, nrow = 2) +
-  scale_fill_manual(values = c("No" = "coral1", "Yes" = "#2C7FB8")) +
+  facet_wrap(~ characteristic, nrow = 2) + # facet_wrap join the 4 plots
   labs(x = "Number of authorised medicines", y = NULL, fill = NULL) +
   theme_classic() +
   theme(legend.position = "bottom")
@@ -533,15 +530,19 @@ To evaluate how the distribution of leading therapeutic approvals has evolved an
 Although monthly seasonality cannot be inferred from annual resolution, the trajectories reveal distinct multi year cyclical waves (3 to 5 year intervals) rather than uniform growth. For clinical research groups, these cyclical surges suggest that R&D productivity and regulatory submissions in these major fields move in synchronized waves, which should be factored into long term strategic planning and pipeline forecasting.
 
 ```{r}
-top4_areas <- area_counts |> slice_head(n = 4) |> pull(area)
+# Obtain the Top 4 areas
+top4_areas <- area_counts |> slice_head(n = 4) |> pull(area) 
 ```
 
 ```{r}
+# look for max value in authorisation year 
 last_year  <- max(medicines_areas$authorisation_year)
+# Calculates first year of the plot
 first_year <- last_year - 19
 
 trend <- area_year |>
   filter(area %in% top4_areas, authorisation_year >= first_year) |>
+  # verify all combinations, even if there was 0 authorisations in a year
   complete(authorisation_year = first_year:last_year, area = top4_areas,
            fill = list(n = 0))
 ```
@@ -549,11 +550,13 @@ trend <- area_year |>
 ```{r}
 #| label: yearly-counts
 year_area <- medicines_areas |>
+  # filter for Top 10 area
   filter(area %in% top10$area, authorisation_year >= first_year) |>
+  # Aggregate data by year and area
   count(authorisation_year, area) |>
   complete(authorisation_year = first_year:last_year, area = top10$area,
-           fill = list(n = 0)) |>
-  mutate(area = factor(area, levels = rev(top10$area)))
+           fill = list(n = 0)) 
+  
 ```
 
 ```{r}
@@ -565,16 +568,15 @@ top4_areas <- head(top10$area, 4)
 
 year_area |>
   filter(area %in% top4_areas) |>
-  mutate(area = factor(as.character(area), levels = top4_areas)) |>
   ggplot(aes(x = authorisation_year, y = n, colour = area)) +
   geom_line(linewidth = 1.5) +
   geom_point(size = 2) +
   scale_y_continuous(limits = c(0, 10), breaks = seq(0, 10, by = 1)) +
-  facet_wrap(~ area, ncol = 2) +
+  facet_wrap(~ area, ncol = 2) + 
   labs(x = "Authorisation year",
        y = "Authorised medicines", colour = NULL) +
   theme_classic() +
-  theme(legend.position = "none")
+  theme(legend.position = "none") #hiding the legend
 
 ```
 
