@@ -63,7 +63,7 @@ Success for this project is accomplished if it : delivers (a) a ranked list of t
 
 Follow the six CRISP-DM phases to answer the question "Which therapeutic areas have the highest number of currently authorized human medicines in the EU?".
 
-For achieving this goal, RStudio is going to be used to develop a Quarto Report, using the following tools: readxl, dplyr, tidyr, ggplot2 and Git.
+For achieving this goal, RStudio is going to be used to develop a Quarto Report, using the following tools: readxl, dplyr, tidyr, lubridate, ggplot2 and Git.
 
 ```         
 ```
@@ -117,7 +117,7 @@ The data set contains variable needed to answer the business question:
 | `Medicine status` | Authorised, withdrawn, etc. | Text |
 | `Therapeutic area (MeSH)` | Disease area(s), separated by `;` | Text |
 | `Generic, Biosimilar` | Medicine characteristic | Text |
-| , `Conditional approval`, `Accelerated assessment`, `Advanced therapy` | Regulatory characteristics | Text |
+| `Marketing authorisation date`, `PRIME: priority medicine,` `Advanced therapy` | Regulatory characteristics | Text |
 
 **Problems encountered with the data:**
 
@@ -285,6 +285,7 @@ As dates in `Marketing authorisation date` are formatted as text, part of the cl
 ```{r}
 #| output: false
 library(lubridate)
+# Convert date to a date type object
 medicines_without_na |> 
   mutate(`Marketing authorisation date` = as_date(`Marketing authorisation date`, format = "%d/%m/%Y"))
 
@@ -306,9 +307,11 @@ Two variables were derived from existing columns at the medicine level (one row 
 #| echo: false
 #| message: false
 #| output: false
+
+# Create a new variable 
 medicines_without_na <- medicines_without_na |>
   mutate(
-    authorisation_year = year(dmy(`Marketing authorisation date`)),
+    authorisation_year = year(`Marketing authorisation date`),
     n_areas = str_count(`Therapeutic area (MeSH)`, ";") + 1 
   )
 

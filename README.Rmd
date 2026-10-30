@@ -1,0 +1,76 @@
+---
+title: "README"
+author: "Daniel Obando"
+date: "2026-10-30"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This project analyses the European Medicines Agency (EMA) dataset of centrally authorised medicine. It follows the CRISP-DM 1.0 methodology and is written as a Quarto document in R.
+
+#### Research Question
+
+Which therapeutic areas have the highest number of currently authorised human medicines in the EU?
+
+#### Supporting questions
+
+1.  Which factors are repeated in the therapeutic areas with the most authorizations?
+2.  How has the pattern of top therapeutic areas changed over the years?
+
+#### Repository Contents
+
+| File | Description |
+|------------------------------------|------------------------------------|
+| `eu_medicine.qmd` | Main Quarto document with the full analysis (CRISP-DM phases) |
+| `eu_medicine.html` | Final version of the project in .html format |
+| `README.md` | This file |
+| `gitignore` | Files excluded from version control |
+| `R_Project_EU_Medicines.Rproj` | RStudio project file |
+| `eu_medicine.xlsx` | Download it yourself (see below) |
+
+#### Data source
+
+- Source: European Medicines Agency (EMA), "Download medicine data" 
+
+- URL: <https://www.ema.europa.eu/en/medicines/download-medicine-data> 
+
+- File used: 'eu_medicine.xlsx' . Excel, 2,748 records, 39 columns, downloaded 11/10/2026 
+
+  **\*The data file is not stored in this repository (it is listed in .gitignore).**
+
+#### Requirements
+
+1.  R version 4.5.2 (2025-10-31) or above.
+
+2.  RStudio version (2026.10.0.233)
+
+3.  Quarto version (1.10.18)
+
+4.  R packages: \`readxl\`, \`lubridate\`, \`dplyr\`, \`tidyverse\`, \`ggplot2\`.
+
+Install the packages with:
+
+```{r}
+
+#install.packages(c("readxl", "janitor", "dplyr", "tidyr", "ggplot2"))
+
+```
+
+#### How to run it:
+
+1.  Clone the repository
+2.  Download \`eu_medicine.xlsx\` from the link above. 
+3.  Place the file in the project's main folder (same folder as \`eu_medicine.qmd\`).
+4.  Open the \`.Rproj\` file in RStudio.
+5.  Install the packages (see Requirements).
+6.  Open \`eu_medicine.qmd\` and click **Render**
+7.  The output\`eu_medicine.html\` will be created in the same folder.
+
+#### Author
+
+Daniel Obando \| Data Handling module \| October, 2026
