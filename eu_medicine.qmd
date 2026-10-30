@@ -603,4 +603,8 @@ This project set out to analyze the European Union’s landscape of authorized h
 
 Understanding these long term cyclical waves and the specific boundaries of regulatory features allows clinical research groups and decision makers to better anticipate market shifts, align pipeline development with high impact therapeutic areas, and improve long-term strategic forecasting.
 
-- AI use declaration: AI was used as a tutor for the creation of this project. No generic code was used and all the content was fully reviewed by the author.
+\*AI use declaration: AI was used as a tutor for the creation of this project. No generic code was used and all the content was fully reviewed by the author.
+
+### References: 
+
+1.  Wickham, H., Çetinkaya-Rundel, M., & Grolemund, G. (2023). *R for data science* (2nd ed.). <https://r4ds.hadley.nz/>
